@@ -2,10 +2,17 @@ import { Router } from 'itty-router';
 
 const router = Router();
 
-// 添加健康检查路由 - 确保返回 Promise
+// 添加健康检查路由
 router.get('/', () => {
   return Promise.resolve(new Response('API is running', {
     headers: { 'Content-Type': 'text/plain' }
+  }));
+});
+
+// 处理 favicon.ico 请求
+router.get('/favicon.ico', () => {
+  return Promise.resolve(new Response(null, {
+    status: 204  // No Content
   }));
 });
 
@@ -67,12 +74,11 @@ router.post('/analyze', async (request, env) => {
   }
 });
 
-// 处理所有未匹配的路由 - 确保返回 Promise
+// 处理所有未匹配的路由
 router.all('*', () => {
   return Promise.resolve(new Response('Not Found', { status: 404 }));
 });
 
-// 确保处理函数返回 Promise
 export default {
   fetch: (request, env, ctx) => router.handle(request, env, ctx)
 }; 
