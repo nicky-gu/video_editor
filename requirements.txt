@@ -1,0 +1,4 @@
+whisper-timestamped
+ffmpeg-python
+PyGithub
+aiohttp 
