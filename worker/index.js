@@ -12,26 +12,31 @@ router.get('/', () => {
 // 处理 favicon.ico 请求
 router.get('/favicon.ico', () => {
   return Promise.resolve(new Response(null, {
-    status: 204  // No Content
+    status: 204
   }));
 });
 
-// 创建分析任务
+// 处理对 /analyze 的 GET 请求
+router.get('/analyze', () => {
+  return Promise.resolve(new Response(JSON.stringify({
+    error: 'Method not allowed. Please use POST request.'
+  }), {
+    status: 405,
+    headers: { 
+      'Content-Type': 'application/json',
+      'Allow': 'POST'
+    }
+  }));
+});
+
+// 创建分析任务 - POST 请求
 router.post('/analyze', async (request, env) => {
   try {
-    // 检查环境变量
-    if (!env.GITHUB_TOKEN) {
-      console.error('Missing GITHUB_TOKEN');
-      throw new Error('Configuration error: Missing GITHUB_TOKEN');
-    }
-    
-    if (!env.GITHUB_REPOSITORY) {
-      console.error('Missing GITHUB_REPOSITORY');
-      throw new Error('Configuration error: Missing GITHUB_REPOSITORY');
+    if (!env.GITHUB_TOKEN || !env.GITHUB_REPOSITORY) {
+      throw new Error('Missing required environment variables');
     }
 
     const { url } = await request.json();
-    
     if (!url) {
       return new Response(JSON.stringify({ error: 'URL is required' }), {
         status: 400,
