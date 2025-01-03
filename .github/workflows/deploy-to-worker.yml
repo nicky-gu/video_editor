@@ -6,6 +6,7 @@ on:
       - master  # 注意：使用您的主分支名称（master 或 main）
     paths:
       - 'worker/**'
+  workflow_dispatch:  # 添加手动触发选项
 
 jobs:
   deploy:
