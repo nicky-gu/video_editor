@@ -1,26 +1,20 @@
 // 创建一个简单的响应处理函数
-const handleRequest = async (request, env) => {
+async function handleRequest(request, env) {
+  // 检查是否是 POST 请求到 /analyze
   if (request.method === 'POST' && new URL(request.url).pathname === '/analyze') {
     try {
+      // 检查环境变量
       if (!env.GITHUB_TOKEN || !env.GITHUB_REPOSITORY) {
-        return new Response(JSON.stringify({ 
-          error: 'Missing required environment variables' 
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        throw new Error('Missing required environment variables');
       }
 
+      // 解析请求体
       const { url } = await request.json();
       if (!url) {
-        return new Response(JSON.stringify({ 
-          error: 'URL is required' 
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        throw new Error('URL is required');
       }
 
+      // 创建 GitHub Issue
       const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/issues`, {
         method: 'POST',
         headers: {
@@ -39,6 +33,10 @@ const handleRequest = async (request, env) => {
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+
       const issue = await response.json();
       return new Response(JSON.stringify({
         task_id: issue.number,
@@ -46,7 +44,7 @@ const handleRequest = async (request, env) => {
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
-      
+
     } catch (error) {
       return new Response(JSON.stringify({ 
         error: error.message 
@@ -59,7 +57,7 @@ const handleRequest = async (request, env) => {
 
   // 处理其他所有请求
   return new Response('Not Found', { status: 404 });
-};
+}
 
 // 导出处理器
 export default {
