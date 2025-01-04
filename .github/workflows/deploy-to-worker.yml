@@ -3,10 +3,10 @@ name: Deploy to Cloudflare Workers
 on:
   push:
     branches:
-      - master
+      - master  # 注意：使用您的主分支名称（master 或 main）
     paths:
       - 'worker/**'
-  workflow_dispatch:
+  workflow_dispatch:  # 添加手动触发选项
 
 jobs:
   deploy:
@@ -29,4 +29,9 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: 'worker' 
+          workingDirectory: 'worker'
+          secrets: |
+            GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }} 
