@@ -29,10 +29,10 @@ async function handleRequest(request, env) {
       const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/issues`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${env.PAT_TOKEN}`,
+          'Authorization': `token ${env.PAT_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
-          'User-Agent': 'Video-Analyzer-Worker'  // 添加 User-Agent
+          'User-Agent': 'Video-Analyzer-Worker'
         },
         body: JSON.stringify({
           title: `视频分析任务: ${new URL(url).pathname.split('/').pop()}`,
