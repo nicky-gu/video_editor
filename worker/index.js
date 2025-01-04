@@ -26,6 +26,7 @@ async function handleRequest(request, env) {
       const testResponse = await fetch('https://api.github.com/rate_limit', {
         headers: {
           'Authorization': `Bearer ${env.PAT_TOKEN.trim()}`,
+          'X-GitHub-Api-Version': '2022-11-28',
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'Video-Analyzer-Worker'
         }
@@ -41,6 +42,7 @@ async function handleRequest(request, env) {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${env.PAT_TOKEN.trim()}`,
+          'X-GitHub-Api-Version': '2022-11-28',
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
           'User-Agent': 'Video-Analyzer-Worker'
