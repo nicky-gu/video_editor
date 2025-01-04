@@ -29,7 +29,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: 'worker'
-          secrets: |
-            PAT_TOKEN=${{ secrets.PAT_TOKEN }}
-            GITHUB_REPOSITORY=${{ github.repository }} 
+          workingDirectory: 'worker' 
