@@ -32,5 +32,5 @@ jobs:
           workingDirectory: 'worker'
           preCommands: |
             echo "Setting secrets..."
-            wrangler secret put PAT_TOKEN <<< "${{ secrets.PAT_TOKEN }}"
-            wrangler secret put GITHUB_REPOSITORY <<< "${{ github.repository }}" 
+            echo "${{ secrets.PAT_TOKEN }}" | wrangler secret put PAT_TOKEN
+            echo "${{ github.repository }}" | wrangler secret put GITHUB_REPOSITORY 
