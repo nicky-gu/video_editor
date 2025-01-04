@@ -25,8 +25,7 @@ async function handleRequest(request, env) {
       // 测试 GitHub API 连接
       const testResponse = await fetch('https://api.github.com/rate_limit', {
         headers: {
-          'Authorization': `Bearer ${env.PAT_TOKEN.trim()}`,
-          'X-GitHub-Api-Version': '2022-11-28',
+          'Authorization': `token ${env.PAT_TOKEN.trim()}`,
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'Video-Analyzer-Worker'
         }
@@ -34,6 +33,11 @@ async function handleRequest(request, env) {
       
       if (!testResponse.ok) {
         const testError = await testResponse.text();
+        console.error('API Test Response:', {
+          status: testResponse.status,
+          headers: Object.fromEntries(testResponse.headers),
+          body: testError
+        });
         throw new Error(`GitHub API test failed: ${testResponse.status} - ${testError}`);
       }
 
@@ -41,8 +45,7 @@ async function handleRequest(request, env) {
       const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/issues`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${env.PAT_TOKEN.trim()}`,
-          'X-GitHub-Api-Version': '2022-11-28',
+          'Authorization': `token ${env.PAT_TOKEN.trim()}`,
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
           'User-Agent': 'Video-Analyzer-Worker'
