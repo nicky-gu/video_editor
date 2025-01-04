@@ -29,8 +29,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: 'worker'
-          preCommands: |
-            echo "Setting secrets..."
-            echo "${{ secrets.PAT_TOKEN }}" | wrangler secret put PAT_TOKEN
-            echo "${{ github.repository }}" | wrangler secret put GITHUB_REPOSITORY 
+          workingDirectory: 'worker' 
