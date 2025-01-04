@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - 'worker/**'
+      - '.github/workflows/deploy-to-worker.yml'  
   workflow_dispatch:
 
 jobs:
