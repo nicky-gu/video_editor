@@ -3,28 +3,36 @@ async function handleRequest(request, env) {
   // 检查是否是 POST 请求到 /analyze
   if (request.method === 'POST' && new URL(request.url).pathname === '/analyze') {
     try {
-      // 检查环境变量
+      // 检查环境变量并打印状态
+      console.log('Environment check:', {
+        hasPAT: !!env.PAT_TOKEN,
+        patTokenLength: env.PAT_TOKEN?.length,
+        repository: env.GITHUB_REPOSITORY
+      });
+
       if (!env.PAT_TOKEN || !env.GITHUB_REPOSITORY) {
-        console.error('Missing:', { 
-          hasPAT: !!env.PAT_TOKEN, 
-          hasRepo: !!env.GITHUB_REPOSITORY 
-        });
         throw new Error('Missing required environment variables');
       }
 
-      // 解析请求体
       const { url } = await request.json();
       if (!url) {
         throw new Error('URL is required');
       }
 
-      // 创建 GitHub Issue
+      // 打印请求信息（注意不要打印完整的 token）
+      console.log('Making GitHub API request:', {
+        url: `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/issues`,
+        tokenPrefix: env.PAT_TOKEN.substring(0, 4) + '...',
+        repository: env.GITHUB_REPOSITORY
+      });
+
       const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/issues`, {
         method: 'POST',
         headers: {
-          'Authorization': `token ${env.PAT_TOKEN}`,
+          'Authorization': `Bearer ${env.PAT_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
+          'User-Agent': 'Video-Analyzer-Worker'  // 添加 User-Agent
         },
         body: JSON.stringify({
           title: `视频分析任务: ${new URL(url).pathname.split('/').pop()}`,
@@ -37,10 +45,17 @@ async function handleRequest(request, env) {
         })
       });
 
+      // 详细的错误处理
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('GitHub API Error:', errorData);
-        throw new Error(`GitHub API error: ${response.status}`);
+        const errorInfo = {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers),
+          body: errorData
+        };
+        console.error('GitHub API Error Details:', errorInfo);
+        throw new Error(`GitHub API error: ${response.status} - ${errorData}`);
       }
 
       const issue = await response.json();
@@ -55,10 +70,15 @@ async function handleRequest(request, env) {
       });
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Full Error:', {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
       return new Response(JSON.stringify({ 
         error: error.message,
-        details: error.stack
+        details: error.stack,
+        timestamp: new Date().toISOString()
       }), {
         status: 500,
         headers: { 
