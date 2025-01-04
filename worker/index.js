@@ -5,6 +5,10 @@ async function handleRequest(request, env) {
     try {
       // 检查环境变量
       if (!env.PAT_TOKEN || !env.GITHUB_REPOSITORY) {
+        console.error('Missing:', { 
+          hasPAT: !!env.PAT_TOKEN, 
+          hasRepo: !!env.GITHUB_REPOSITORY 
+        });
         throw new Error('Missing required environment variables');
       }
 
