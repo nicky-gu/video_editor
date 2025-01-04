@@ -31,9 +31,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: 'worker'
           secrets: |
-            PAT_TOKEN
-            GITHUB_REPOSITORY
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }} 
+            PAT_TOKEN=${{ secrets.PAT_TOKEN }}
+            GITHUB_REPOSITORY=${{ github.repository }} 
