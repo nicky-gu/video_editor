@@ -3,15 +3,18 @@ async function handleRequest(request, env) {
   // 检查是否是 POST 请求到 /analyze
   if (request.method === 'POST' && new URL(request.url).pathname === '/analyze') {
     try {
-      // 检查环境变量并打印状态
-      console.log('Environment check:', {
-        hasPAT: !!env.PAT_TOKEN,
-        patTokenLength: env.PAT_TOKEN?.length,
+      // 详细检查 token 格式
+      const tokenDebugInfo = {
+        exists: !!env.PAT_TOKEN,
+        length: env.PAT_TOKEN?.length,
+        startsWithGhp: env.PAT_TOKEN?.startsWith('ghp_'),
+        format: env.PAT_TOKEN?.match(/^ghp_[a-zA-Z0-9]{36}$/) ? 'valid' : 'invalid',
         repository: env.GITHUB_REPOSITORY
-      });
+      };
+      console.log('Token debug info:', tokenDebugInfo);
 
       if (!env.PAT_TOKEN || !env.GITHUB_REPOSITORY) {
-        throw new Error('Missing required environment variables');
+        throw new Error(`Missing or invalid environment variables: ${JSON.stringify(tokenDebugInfo)}`);
       }
 
       const { url } = await request.json();
@@ -19,13 +22,21 @@ async function handleRequest(request, env) {
         throw new Error('URL is required');
       }
 
-      // 打印请求信息（注意不要打印完整的 token）
-      console.log('Making GitHub API request:', {
-        url: `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/issues`,
-        tokenPrefix: env.PAT_TOKEN.substring(0, 4) + '...',
-        repository: env.GITHUB_REPOSITORY
+      // 测试 GitHub API 连接
+      const testResponse = await fetch('https://api.github.com/rate_limit', {
+        headers: {
+          'Authorization': `token ${env.PAT_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Video-Analyzer-Worker'
+        }
       });
+      
+      if (!testResponse.ok) {
+        const testError = await testResponse.text();
+        throw new Error(`GitHub API test failed: ${testResponse.status} - ${testError}`);
+      }
 
+      // 主要 API 请求
       const response = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/issues`, {
         method: 'POST',
         headers: {
@@ -45,16 +56,14 @@ async function handleRequest(request, env) {
         })
       });
 
-      // 详细的错误处理
       if (!response.ok) {
         const errorData = await response.text();
-        const errorInfo = {
+        console.error('GitHub API Error Details:', {
           status: response.status,
           statusText: response.statusText,
           headers: Object.fromEntries(response.headers),
           body: errorData
-        };
-        console.error('GitHub API Error Details:', errorInfo);
+        });
         throw new Error(`GitHub API error: ${response.status} - ${errorData}`);
       }
 
@@ -78,7 +87,12 @@ async function handleRequest(request, env) {
       return new Response(JSON.stringify({ 
         error: error.message,
         details: error.stack,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        debug: {
+          tokenExists: !!env.PAT_TOKEN,
+          tokenLength: env.PAT_TOKEN?.length,
+          repository: env.GITHUB_REPOSITORY
+        }
       }), {
         status: 500,
         headers: { 
