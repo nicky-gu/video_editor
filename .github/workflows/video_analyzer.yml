@@ -27,10 +27,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
       run: |
+        cd src
         python -c "
-        import asyncio
-        from src.issue_processor import IssueProcessor
-        
-        processor = IssueProcessor()
-        asyncio.run(processor.process_issue(${{ github.event.issue.number }}))
+from issue_processor import IssueProcessor
+import asyncio
+
+processor = IssueProcessor()
+asyncio.run(processor.process_issue(${{ github.event.issue.number }}))
         " 
