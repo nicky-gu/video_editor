@@ -3,7 +3,7 @@ name: Video Analysis
 on:
   issues:
     types: [opened, labeled]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   analyze:
@@ -13,11 +13,14 @@ jobs:
     - name: 输出调试信息
       run: |
         echo "Event name: ${{ github.event_name }}"
+        echo "Event type: ${{ github.event.action }}"
         echo "Issue number: ${{ github.event.issue.number }}"
+        echo "Issue title: ${{ github.event.issue.title }}"
+        echo "Issue body: ${{ github.event.issue.body }}"
         echo "Labels: ${{ toJSON(github.event.issue.labels) }}"
         
     - name: 处理视频
-      if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
+      if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
