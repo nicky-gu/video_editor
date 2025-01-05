@@ -11,8 +11,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制应用代码
-COPY . .
+# 复制源代码到 src 目录
+COPY src/ /app/src/
+# 确保 Python 能找到模块
+ENV PYTHONPATH=/app
 
 # 设置环境变量
 ENV PYTHONUNBUFFERED=1
