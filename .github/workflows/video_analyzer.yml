@@ -10,28 +10,19 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
     
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Process video
+    - name: 处理视频
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
       run: |
-        cd src
-        python -c "
+        docker run --rm \
+          -e GITHUB_TOKEN \
+          -e ZHIPUAI_API_KEY \
+          ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
+          python -c "
 from issue_processor import IssueProcessor
 import asyncio
 
 processor = IssueProcessor()
 asyncio.run(processor.process_issue(${{ github.event.issue.number }}))
-        " 
+          " 

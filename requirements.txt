@@ -1,4 +1,9 @@
 whisper-timestamped
 ffmpeg-python
 PyGithub
-aiohttp 
+aiohttp
+zhipuai
+torch
+asyncio
+uvicorn
+python-dotenv 
