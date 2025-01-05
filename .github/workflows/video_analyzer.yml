@@ -2,12 +2,12 @@ name: Video Analysis
 
 on:
   issues:
-    types: [opened, labeled]
-  workflow_dispatch:
+    types: [opened]
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
     
     steps:
     - name: 输出调试信息
@@ -20,7 +20,6 @@ jobs:
         echo "Labels: ${{ toJSON(github.event.issue.labels) }}"
         
     - name: 处理视频
-      if: github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
