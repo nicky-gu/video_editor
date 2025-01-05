@@ -3,6 +3,7 @@ name: Video Analysis
 on:
   issues:
     types: [opened, labeled]
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   analyze:
