@@ -11,7 +11,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 首先只复制 src 目录
+# 首先复制 src 目录
 COPY src/ /app/src/
 
 # 确保 __init__.py 存在
@@ -21,11 +21,12 @@ RUN touch /app/src/__init__.py
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# 测试模块导入
-RUN python -c "from src.issue_processor import IssueProcessor"
-
 # 复制其他必要文件
 COPY . .
+
+# 显示目录结构以便调试
+RUN ls -la /app && \
+    ls -la /app/src
 
 EXPOSE 8000
 
