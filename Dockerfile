@@ -1,6 +1,3 @@
-
-3. **Dockerfile 需要优化**：
-```dockerfile
 FROM python:3.9-slim
 
 # 安装系统依赖
