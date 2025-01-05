@@ -6,7 +6,7 @@ on:
       - 'Dockerfile'
       - 'requirements.txt'
     branches:
-      - main
+      - master
   workflow_dispatch:  # 允许手动触发
 
 jobs:
