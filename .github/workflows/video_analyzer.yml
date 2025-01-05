@@ -15,8 +15,6 @@ jobs:
         echo "Event name: ${{ github.event_name }}"
         echo "Event type: ${{ github.event.action }}"
         echo "Issue number: ${{ github.event.issue.number }}"
-        echo "Issue title: ${{ github.event.issue.title }}"
-        echo "Issue body: ${{ github.event.issue.body }}"
         echo "Labels: ${{ toJSON(github.event.issue.labels) }}"
         
     - name: 处理视频
@@ -28,4 +26,4 @@ jobs:
           -e GITHUB_TOKEN \
           -e ZHIPUAI_API_KEY \
           ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
-          python -c "from issue_processor import IssueProcessor; import asyncio; processor = IssueProcessor(); asyncio.run(processor.process_issue(${{ github.event.issue.number }}))" 
+          bash -c "cd /app && PYTHONPATH=/app python -c 'from src.issue_processor import IssueProcessor; import asyncio; processor = IssueProcessor(); asyncio.run(processor.process_issue(${{ github.event.issue.number }}))'" 
