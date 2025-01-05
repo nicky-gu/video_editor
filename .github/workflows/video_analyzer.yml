@@ -7,10 +7,18 @@ on:
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
+    # 移除条件判断，先看是否能触发
+    # if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
     
     steps:
+    - name: 输出调试信息
+      run: |
+        echo "Event name: ${{ github.event_name }}"
+        echo "Issue number: ${{ github.event.issue.number }}"
+        echo "Labels: ${{ toJSON(github.event.issue.labels) }}"
+        
     - name: 处理视频
+      if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
