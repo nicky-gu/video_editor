@@ -2,6 +2,7 @@ from typing import Dict
 import asyncio
 import zhipuai
 import os
+from src.audio_extractor import AudioExtractor
 
 class VideoProcessor:
     def __init__(self):

@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from processor import VideoProcessor
+from src.processor import VideoProcessor
 import logging
 from asyncio import timeout
 

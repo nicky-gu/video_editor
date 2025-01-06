@@ -1,7 +1,10 @@
 import os
 import json
 from github import Github
-from processor import VideoProcessor
+from src.processor import VideoProcessor
+from src.audio_extractor import AudioExtractor
+from src.transcriber import Transcriber
+from src.queue_processor import QueueProcessor
 
 class IssueProcessor:
     def __init__(self):
