@@ -13,6 +13,15 @@ jobs:
     - name: 检出代码
       uses: actions/checkout@v2
       
+    - name: 检查代码状态
+      run: |
+        echo "=== Git Status ==="
+        git status
+        echo "=== Git Log ==="
+        git log -1
+        echo "=== File Content ==="
+        cat src/issue_processor.py
+        
     - name: 构建 Docker 镜像
       run: |
         docker build --no-cache -t ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest .
