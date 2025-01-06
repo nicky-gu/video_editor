@@ -33,15 +33,18 @@ jobs:
       run: |
         curl -L "${{ steps.extract_url.outputs.video_url }}" -o video.mp4
 
+    - name: 检查视频文件
+      run: |
+        if [ ! -s video.mp4 ]; then echo "Error: Video file is empty or not downloaded properly." && exit 1; fi
+
     - name: 提取音轨
       run: |
-        ffmpeg -i video.mp4 -q:a 0 -map a audio.mp3
+        ffmpeg -v error -i video.mp4 -q:a 0 -map a audio.mp3 || { echo "Error extracting audio"; exit 1; }
 
     - name: 转写音频
       run: |
-        # 使用 openai-whisper 或其他转写工具处理音频文件
         whisper audio.mp3 --output_dir ./transcriptions --task transcribe --output_format srt
 
     - name: 输出转写结果
       run: |
-        cat ./transcriptions/audio.txt
+        if [ -f ./transcriptions/audio.srt ]; then cat ./transcriptions/audio.srt; else echo "Transcription failed"; fi
