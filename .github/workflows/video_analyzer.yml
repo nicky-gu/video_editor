@@ -22,11 +22,6 @@ jobs:
         echo "=== File Content ==="
         cat src/issue_processor.py
         
-    - name: 构建 Docker 镜像
-      run: |
-        docker build --no-cache -t ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest .
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest
-        
     - name: 输出调试信息
       run: |
         echo "Event name: ${{ github.event_name }}"
