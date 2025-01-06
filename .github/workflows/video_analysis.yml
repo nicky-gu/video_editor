@@ -31,10 +31,7 @@ jobs:
 
     - name: 下载视频
       run: |
-        curl -L "${{ steps.extract_url.outputs.video_url }}" -o video.mp4
-
-    - name: 检查视频文件
-      run: |
+        curl -L -H "User-Agent: Mozilla/5.0" "${{ steps.extract_url.outputs.video_url }}" -o video.mp4
         if [ ! -s video.mp4 ]; then echo "Error: Video file is empty or not downloaded properly." && exit 1; fi
 
     - name: 提取音轨
