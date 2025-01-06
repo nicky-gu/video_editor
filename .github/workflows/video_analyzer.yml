@@ -18,45 +18,16 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: 安装 FFmpeg
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg
-
     - name: 安装依赖
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: 验证模块导入
-      run: |
-        echo "=== 验证模块导入 ==="
-        PYTHONPATH=$PYTHONPATH:$(pwd) python -c "
-        import sys
-        print('Python path:', sys.path)
-        print('Importing modules...')
-        from src.issue_processor import IssueProcessor
-        from src.processor import VideoProcessor
-        from src.queue_processor import QueueProcessor
-        from src.audio_extractor import AudioExtractor
-        from src.transcriber import Transcriber
-        print('所有模块导入成功！')
-        "
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg jq
+        pip install openai-whisper
 
     - name: 处理视频
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
       run: |
-        PYTHONPATH=$PYTHONPATH:$(pwd) python -c "
-        import os
-        import sys
-        import asyncio
-        from src.issue_processor import IssueProcessor
-        
-        print('Current directory:', os.getcwd())
-        print('Python path:', sys.path)
-        
-        processor = IssueProcessor()
-        asyncio.run(processor.process_issue(${{ github.event.issue.number }}))
-        " 
+        chmod +x .github/workflows/process_video.sh
+        .github/workflows/process_video.sh ${{ github.event.issue.number }} 
