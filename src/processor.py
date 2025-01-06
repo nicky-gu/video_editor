@@ -3,11 +3,12 @@ import asyncio
 import zhipuai
 import os
 from src.audio_extractor import AudioExtractor
+from src.transcriber import Transcriber
 
 class VideoProcessor:
     def __init__(self):
-        self.transcriber = VideoTranscriber()
         self.audio_extractor = AudioExtractor()
+        self.transcriber = Transcriber()
         self.zhipu_client = zhipuai.ZhipuAI(api_key=os.environ['ZHIPUAI_API_KEY'])
         
     async def analyze_transcript(self, transcript: list) -> Dict:
@@ -52,10 +53,10 @@ class VideoProcessor:
             audio_path = await self.audio_extractor.extract_audio(video_path)
             
             # 3. 转录音频
-            transcript = await self.transcriber.transcribe(audio_path)
+            transcription = await self.transcriber.transcribe(audio_path)
             
             # 4. 使用智谱AI分析转录内容
-            result = await self.analyze_transcript(transcript)
+            result = await self.analyze_transcript(transcription)
             
             # 5. 清理临时文件
             self.cleanup_files([video_path, audio_path])
