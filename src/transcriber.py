@@ -14,4 +14,4 @@ class Transcriber:
             "start": str(timedelta(seconds=int(segment["start"]))),
             "end": str(timedelta(seconds=int(segment["end"]))),
             "text": segment["text"].strip()
-        } for segment in result["segments"]] 
+        } for segment in result["segments"]]
