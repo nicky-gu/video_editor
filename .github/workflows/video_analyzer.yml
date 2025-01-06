@@ -10,18 +10,6 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
     
     steps:
-    - name: 检出代码
-      uses: actions/checkout@v2
-      
-    - name: 检查代码状态
-      run: |
-        echo "=== Git Status ==="
-        git status
-        echo "=== Git Log ==="
-        git log -1
-        echo "=== File Content ==="
-        cat src/issue_processor.py
-        
     - name: 输出调试信息
       run: |
         echo "Event name: ${{ github.event_name }}"
@@ -31,8 +19,19 @@ jobs:
         
     - name: 检查文件内容
       run: |
+        echo "=== 检查 transcriber.py 内容 ==="
+        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest cat /app/src/transcriber.py
+        
+        echo "=== 检查 Python 路径 ==="
         docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
-          cat /app/src/issue_processor.py
+          python -c "import sys; print('\n'.join(sys.path))"
+        
+        echo "=== 检查 src 目录结构 ==="
+        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest ls -la /app/src/
+        
+        echo "=== 尝试导入模块 ==="
+        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
+          python -c "import sys; sys.path.append('/app'); print('Python path:', sys.path); from src.transcriber import Transcriber; print('Successfully imported Transcriber')"
         
     - name: 处理视频
       env:
@@ -43,4 +42,4 @@ jobs:
           -e GITHUB_TOKEN \
           -e ZHIPUAI_API_KEY \
           ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
-          bash -c "cd /app && PYTHONPATH=/app python -c 'from src.issue_processor import IssueProcessor; import asyncio; processor = IssueProcessor(); asyncio.run(processor.process_issue(${{ github.event.issue.number }}))'" 
+          bash -c "cd /app && PYTHONPATH=/app python -c 'import sys; print(\"Current directory:\", os.getcwd()); print(\"Python path:\", sys.path); from src.issue_processor import IssueProcessor; import asyncio; processor = IssueProcessor(); asyncio.run(processor.process_issue(${{ github.event.issue.number }}))'" 
