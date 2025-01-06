@@ -3,6 +3,7 @@ FROM python:3.9-slim
 # 安装系统依赖
 RUN apt-get update && apt-get install -y \
     ffmpeg \
+    tree \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -11,22 +12,20 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 首先复制 src 目录
-COPY src/ /app/src/
-
-# 确保 __init__.py 存在
-RUN touch /app/src/__init__.py
-
-# 设置 Python 路径
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-
-# 复制其他必要文件
+# 复制源代码
 COPY . .
 
-# 显示目录结构以便调试
-RUN ls -la /app && \
-    ls -la /app/src
+# 显示完整的目录结构
+RUN echo "=== 显示完整目录结构 ===" && \
+    tree /app && \
+    echo "=== 显示 Python 路径 ===" && \
+    python -c "import sys; print('\n'.join(sys.path))" && \
+    echo "=== 显示 src 目录内容 ===" && \
+    ls -la /app/src/
+
+# 设置环境变量
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 

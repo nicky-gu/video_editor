@@ -22,8 +22,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
       run: |
+        # 显示容器中的文件结构
+        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest tree /app
+        
+        # 运行主程序
         docker run --rm \
           -e GITHUB_TOKEN \
           -e ZHIPUAI_API_KEY \
           ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
-          bash -c "cd /app && PYTHONPATH=/app python -c 'from src.issue_processor import IssueProcessor; import asyncio; processor = IssueProcessor(); asyncio.run(processor.process_issue(${{ github.event.issue.number }}))'" 
+          bash -c "cd /app && PYTHONPATH=/app python -c 'import sys; print(sys.path); from src.issue_processor import IssueProcessor; import asyncio; processor = IssueProcessor(); asyncio.run(processor.process_issue(${{ github.event.issue.number }}))'" 
