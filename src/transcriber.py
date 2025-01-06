@@ -7,8 +7,8 @@ class Transcriber:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = whisper.load_model("base").to(self.device)
         
-    async def transcribe(self, audio_file):
-        result = self.model.transcribe(audio_file)
+    async def transcribe(self, video_path: str):
+        result = self.model.transcribe(video_path)
         
         return [{
             "start": str(timedelta(seconds=int(segment["start"]))),
