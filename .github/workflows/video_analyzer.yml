@@ -10,36 +10,53 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
     
     steps:
-    - name: 输出调试信息
+    - name: 检出代码
+      uses: actions/checkout@v2
+
+    - name: 设置 Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - name: 安装 FFmpeg
       run: |
-        echo "Event name: ${{ github.event_name }}"
-        echo "Event type: ${{ github.event.action }}"
-        echo "Issue number: ${{ github.event.issue.number }}"
-        echo "Labels: ${{ toJSON(github.event.issue.labels) }}"
-        
-    - name: 检查文件内容
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: 安装依赖
       run: |
-        echo "=== 检查 transcriber.py 内容 ==="
-        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest cat /app/src/transcriber.py
-        
-        echo "=== 检查 Python 路径 ==="
-        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
-          python -c "import sys; print('\n'.join(sys.path))"
-        
-        echo "=== 检查 src 目录结构 ==="
-        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest ls -la /app/src/
-        
-        echo "=== 尝试导入模块 ==="
-        docker run --rm ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
-          python -c "import sys; sys.path.append('/app'); print('Python path:', sys.path); from src.transcriber import Transcriber; print('Successfully imported Transcriber')"
-        
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: 验证模块导入
+      run: |
+        echo "=== 验证模块导入 ==="
+        PYTHONPATH=$PYTHONPATH:$(pwd) python -c "
+        import sys
+        print('Python path:', sys.path)
+        print('Importing modules...')
+        from src.issue_processor import IssueProcessor
+        from src.processor import VideoProcessor
+        from src.queue_processor import QueueProcessor
+        from src.audio_extractor import AudioExtractor
+        from src.transcriber import Transcriber
+        print('所有模块导入成功！')
+        "
+
     - name: 处理视频
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         ZHIPUAI_API_KEY: ${{ secrets.ZHIPUAI_API_KEY }}
       run: |
-        docker run --rm \
-          -e GITHUB_TOKEN \
-          -e ZHIPUAI_API_KEY \
-          ${{ secrets.DOCKERHUB_USERNAME }}/video-analyzer:latest \
-          bash -c "cd /app && PYTHONPATH=/app python -c 'import sys; print(\"Current directory:\", os.getcwd()); print(\"Python path:\", sys.path); from src.issue_processor import IssueProcessor; import asyncio; processor = IssueProcessor(); asyncio.run(processor.process_issue(${{ github.event.issue.number }}))'" 
+        PYTHONPATH=$PYTHONPATH:$(pwd) python -c "
+        import os
+        import sys
+        import asyncio
+        from src.issue_processor import IssueProcessor
+        
+        print('Current directory:', os.getcwd())
+        print('Python path:', sys.path)
+        
+        processor = IssueProcessor()
+        asyncio.run(processor.process_issue(${{ github.event.issue.number }}))
+        " 
