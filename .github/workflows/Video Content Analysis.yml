@@ -61,7 +61,7 @@ jobs:
         run: |
           pip install --upgrade zhipuai
 
-      - name: 调用 GLM-4-plus 分析
+      - name: 调用 GLM-4-flash 分析
         id: analyze_gist
         run: |
           python - << 'EOL'
@@ -76,7 +76,7 @@ jobs:
           user_content = """${{ steps.get_gist.outputs.result }}"""
 
           response = client.chat.completions.create(
-              model="glm-4-plus",
+              model="glm-4-flash",
               messages=[
                   {"role": "system", "content": system_prompt},
                   {"role": "user", "content": user_content}
