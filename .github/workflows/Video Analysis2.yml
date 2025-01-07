@@ -1,4 +1,4 @@
-name: Video Analysis
+name: 提取视频SRT字幕
 
 on:
   issues:
