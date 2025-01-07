@@ -57,9 +57,8 @@ jobs:
           const videoUrl = '${{ steps.extract_url.outputs.video_url }}';
           const now = new Date().toISOString();
           const videoName = 'video.mp4'; // 或者从URL或其他地方提取视频名称
-
           // 创建一个新的 Gist
-          const gist = await github.gists.create({
+          const gist = await github.rest.gists.create({
             files: {
               'transcription.txt': {
                 content: transcription
@@ -68,7 +67,6 @@ jobs:
             public: false, // 设置为 true 可创建公开 Gist
             description: `Transcription for issue #${context.issue.number}`
           });
-
           // 在 Issue 中添加评论，包含 Gist 链接
           const gistUrl = gist.data.html_url;
           const commentBody = `
@@ -76,10 +74,8 @@ jobs:
             - **视频链接**: [${videoUrl}](${videoUrl})
             - **分析时间**: ${now}
             - **视频名称**: ${videoName}
-
             转写结果已存储在 [Gist](${gistUrl})。
           `;
-
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
