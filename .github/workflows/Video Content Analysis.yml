@@ -3,7 +3,7 @@ name: 视频AI粗剪
 on:
   issues:
     types: [labeled]
-  workflow_dispatch:  # 添加手动触发选项
+  workflow_dispatch:
 
 jobs:
   analyze:
@@ -17,7 +17,7 @@ jobs:
       - name: 输出调试信息 - 事件上下文
         run: |
           echo "Event name: ${{ github.event_name }}"
-          echo "Event type: ${{ github.event.action }}"
+          echo "Event action: ${{ github.event.action }}"
           echo "Issue number: ${{ github.event.issue.number }}"
 
       - name: 获取 Gist 内容
@@ -32,7 +32,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number
             });
-            const gistUrlPattern = /gist.github.com\/([\w\d]+)/;
+            const gistUrlPattern = /gist\.github\.com\/[\w-]+\/([\da-f]+)/;
             let gistContent = '';
             for (const comment of comments) {
               console.log(`Processing comment: ${comment.body}`);
@@ -64,7 +64,7 @@ jobs:
           python - << 'EOL'
           from zhipuai import ZhipuAI
           client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
-          system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和简要描述。每段的时间不要长于8分钟，并且给每段是视频起3个吸引眼球适合哔哩哔哩的视频标题。"
+          system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和简要描述。"
           response = client.chat.completions.create(
               model="glm-4-plus",
               messages=[
