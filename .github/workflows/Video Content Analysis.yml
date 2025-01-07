@@ -65,6 +65,7 @@ jobs:
         id: analyze_gist
         run: |
           python - << 'EOL'
+          import os
           from zhipuai import ZhipuAI
 
           # 确保 API 密钥正确设置
@@ -88,21 +89,24 @@ jobs:
 
           # 访问 message 的 content 属性
           analysis_result = response.choices[0].message.content
-          print(f"::set-output name=analysis_result::{analysis_result}")
+
+          # 使用环境文件传递输出
+          with open(os.environ['GITHUB_ENV'], 'a') as env_file:
+              env_file.write(f"ANALYSIS_RESULT={analysis_result}\n")
           EOL
 
       - name: 添加分析结果到 Issue 评论
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.PAT_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const analysisResult = `\n\n**视频分析结果**:\n${{ steps.analyze_gist.outputs.analysis_result }}`;
+            const analysisResult = process.env.ANALYSIS_RESULT;
             console.log(`Analysis result: ${analysisResult}`);
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: analysisResult
+              body: `**视频分析结果**:\n${analysisResult}`
             });
 
       - name: 更新 Issue 标签
