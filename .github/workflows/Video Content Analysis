@@ -3,6 +3,7 @@ name: Video Content Analysis
 on:
   issues:
     types: [labeled]
+  workflow_dispatch:  # 添加手动触发选项
 
 jobs:
   analyze:
@@ -13,12 +14,16 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v2
 
+      - name: 输出调试信息 - 事件上下文
+        run: echo "Event context: ${{ toJson(github.event) }}"
+
       - name: 获取 Gist 内容
         uses: actions/github-script@v5
         id: get_gist
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            console.log("Fetching issue comments");
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -29,9 +34,11 @@ jobs:
             let gistContent = '';
 
             for (const comment of comments) {
+              console.log(`Processing comment: ${comment.body}`);
               const match = comment.body.match(gistUrlPattern);
               if (match) {
                 const gistId = match[1];
+                console.log(`Found Gist ID: ${gistId}`);
                 const { data: gist } = await github.rest.gists.get({
                   gist_id: gistId
                 });
@@ -114,6 +121,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const analysisResult = `\n\n**视频分析结果**:\n${{ steps.analyze_gist.outputs.analysis_result }}`;
+            console.log(`Analysis result: ${analysisResult}`);
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -136,11 +144,15 @@ jobs:
               issue_number: issueNumber
             });
 
+            console.log(`Current labels: ${issue.labels.map(label => label.name).join(', ')}`);
+
             // 过滤掉 'in-progress' 标签，并添加 'done' 标签
             const newLabels = issue.labels
               .map(label => label.name)
               .filter(name => name !== 'in-progress')
               .concat('done');
+
+            console.log(`New labels: ${newLabels.join(', ')}`);
 
             // 更新 issue 的标签
             await github.rest.issues.update({
