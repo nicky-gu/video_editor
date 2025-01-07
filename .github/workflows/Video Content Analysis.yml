@@ -29,10 +29,8 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number
             });
-
             const gistUrlPattern = /gist.github.com\/([\w\d]+)/;
             let gistContent = '';
-
             for (const comment of comments) {
               console.log(`Processing comment: ${comment.body}`);
               const match = comment.body.match(gistUrlPattern);
@@ -46,11 +44,9 @@ jobs:
                 break;
               }
             }
-
             if (!gistContent) {
               throw new Error('Gist content not found');
             }
-
             return { result: gistContent };
 
       - name: 设置 Python
@@ -64,7 +60,6 @@ jobs:
           pip install zhipuai
           python - <<EOF
           from zhipuai import ZhipuAI
-
           client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
           response = client.chat.completions.create(
               model="glm-4-plus",
@@ -136,24 +131,19 @@ jobs:
           script: |
             const issueNumber = context.issue.number;
             const { owner, repo } = context.repo;
-
             // 获取当前 issue 的标签
             const { data: issue } = await github.rest.issues.get({
               owner,
               repo,
               issue_number: issueNumber
             });
-
             console.log(`Current labels: ${issue.labels.map(label => label.name).join(', ')}`);
-
             // 过滤掉 'in-progress' 标签，并添加 'done' 标签
             const newLabels = issue.labels
               .map(label => label.name)
               .filter(name => name !== 'in-progress')
               .concat('done');
-
             console.log(`New labels: ${newLabels.join(', ')}`);
-
             // 更新 issue 的标签
             await github.rest.issues.update({
               owner,
