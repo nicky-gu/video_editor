@@ -128,3 +128,54 @@ jobs:
               issue_number: issueNumber,
               labels: newLabels
             });
+
+      - name: 获取更新后的 Issue 信息和评论
+        id: updated_issue_details
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.issue.number;
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number
+            });
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number
+            });
+
+            const commentList = comments.map(comment => `- ${comment.user.login}: ${comment.body}`).join('\n');
+
+            return {
+              issueTitle: issue.title,
+              issueBody: issue.body,
+              commentList
+            };
+
+      - name: 通知任务成功
+        if: success()
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d @- ${{ secrets.FEISHU_WEBHOOK }} <<EOF
+          {
+            "msg_type": "text",
+            "content": {
+              "text": "视频AI粗剪任务成功\nIssue: ${{ steps.updated_issue_details.outputs.issueTitle }}\n${{ steps.updated_issue_details.outputs.issueBody }}\nComments:\n${{ steps.updated_issue_details.outputs.commentList }}"
+            }
+          }
+          EOF
+
+      - name: 通知任务失败
+        if: failure()
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d @- ${{ secrets.FEISHU_WEBHOOK }} <<EOF
+          {
+            "msg_type": "text",
+            "content": {
+              "text": "视频AI粗剪任务失败\n失败原因: ${{ failure() }}"
+            }
+          }
+          EOF
