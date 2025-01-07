@@ -94,7 +94,7 @@ jobs:
       - name: 添加分析结果到 Issue 评论
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const analysisResult = `\n\n**视频分析结果**:\n${{ steps.analyze_gist.outputs.analysis_result }}`;
             console.log(`Analysis result: ${analysisResult}`);
