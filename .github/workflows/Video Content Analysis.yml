@@ -43,7 +43,7 @@ jobs:
                 const { data: gist } = await github.rest.gists.get({
                   gist_id: gistId
                 });
-                gistContent = gist.files['transcription.txt'].content;
+                gistContent = gist.files['transcription.txt']?.content || '';
                 break;
               }
             }
@@ -59,16 +59,21 @@ jobs:
 
       - name: 安装依赖
         run: |
-          pip install zhipuai
+          pip install --upgrade zhipuai
 
       - name: 调用 GLM-4-plus 分析
         id: analyze_gist
         run: |
           python - << 'EOL'
           from zhipuai import ZhipuAI
+
+          # 确保 API 密钥正确设置
           client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
+
           system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和简要描述。每段的时间不要超过8分钟，并且需要配上2个适合bilibili视频的标题要求足够吸引眼球。一定不能遗漏时间戳。"
+
           user_content = """${{ steps.get_gist.outputs.result }}"""
+
           response = client.chat.completions.create(
               model="glm-4-plus",
               messages=[
@@ -76,7 +81,12 @@ jobs:
                   {"role": "user", "content": user_content}
               ]
           )
-          analysis_result = response['choices'][0]['message']['content']
+
+          # 假设 response.choices 是一个列表
+          if not response.choices:
+              raise ValueError("No choices found in the response.")
+
+          analysis_result = response.choices[0].message["content"]
           print(f"::set-output name=analysis_result::{analysis_result}")
           EOL
 
