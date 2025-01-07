@@ -1,0 +1,88 @@
+name: Video Analysis
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'video-analysis') && contains(github.event.issue.labels.*.name, 'pending')
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v2
+
+    - name: 设置 Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: 安装依赖
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg jq
+        pip install openai-whisper
+
+    - name: 提取视频 URL
+      id: extract_url
+      run: |
+        echo "::set-output name=video_url::$(echo '${{ github.event.issue.body }}' | grep -oP 'https?://[^\s]+' | head -1)"
+
+    - name: 下载视频
+      run: |
+        curl -L -H "User-Agent: Mozilla/5.0" "${{ steps.extract_url.outputs.video_url }}" -o video.mp4
+        if [ ! -s video.mp4 ]; then echo "Error: Video file is empty or not downloaded properly." && exit 1; fi
+
+    - name: 提取音轨
+      run: |
+        ffmpeg -v error -i video.mp4 -q:a 0 -map a audio.mp3 || { echo "Error extracting audio"; exit 1; }
+
+    - name: 转写音频
+      run: |
+        whisper audio.mp3 --output_dir ./transcriptions --task transcribe --output_format srt
+
+    - name: 输出转写结果
+      run: |
+        if [ ! -f ./transcriptions/audio.srt ]; then echo "Transcription failed" && exit 1; fi
+        cat ./transcriptions/audio.srt > transcription_output.txt
+
+    - name: 创建 Gist 并添加到 issue 评论
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const transcription = fs.readFileSync('./transcription_output.txt', 'utf8');
+          const videoUrl = '${{ steps.extract_url.outputs.video_url }}';
+          const now = new Date().toISOString();
+          const videoName = 'video.mp4'; // 或者从URL或其他地方提取视频名称
+
+          // 创建一个新的 Gist
+          const gist = await github.gists.create({
+            files: {
+              'transcription.txt': {
+                content: transcription
+              }
+            },
+            public: false, // 设置为 true 可创建公开 Gist
+            description: `Transcription for issue #${context.issue.number}`
+          });
+
+          // 在 Issue 中添加评论，包含 Gist 链接
+          const gistUrl = gist.data.html_url;
+          const commentBody = `
+            **视频分析结果**:
+            - **视频链接**: [${videoUrl}](${videoUrl})
+            - **分析时间**: ${now}
+            - **视频名称**: ${videoName}
+
+            转写结果已存储在 [Gist](${gistUrl})。
+          `;
+
+          await github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: commentBody
+          });
