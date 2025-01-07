@@ -50,7 +50,7 @@ jobs:
     - name: 创建 Gist 并添加到 issue 评论
       uses: actions/github-script@v5
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.PAT_TOKEN }}
         script: |
           const fs = require('fs');
           const transcription = fs.readFileSync('./transcription_output.txt', 'utf8');
