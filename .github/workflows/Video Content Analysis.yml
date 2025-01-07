@@ -82,11 +82,12 @@ jobs:
               ]
           )
 
-          # 假设 response.choices 是一个列表
+          # 确保 response.choices 是一个列表并且有内容
           if not response.choices:
               raise ValueError("No choices found in the response.")
 
-          analysis_result = response.choices[0].message["content"]
+          # 访问 message 的 content 属性
+          analysis_result = response.choices[0].message.content
           print(f"::set-output name=analysis_result::{analysis_result}")
           EOL
 
