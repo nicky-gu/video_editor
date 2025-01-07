@@ -1,0 +1,151 @@
+name: Video Content Analysis
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'in-progress') && contains(github.event.issue.labels.*.name, 'video-analysis')
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v2
+
+      - name: 获取 Gist 内容
+        uses: actions/github-script@v5
+        id: get_gist
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const gistUrlPattern = /gist.github.com\/([\w\d]+)/;
+            let gistContent = '';
+
+            for (const comment of comments) {
+              const match = comment.body.match(gistUrlPattern);
+              if (match) {
+                const gistId = match[1];
+                const { data: gist } = await github.rest.gists.get({
+                  gist_id: gistId
+                });
+                gistContent = gist.files['transcription.txt'].content;
+                break;
+              }
+            }
+
+            if (!gistContent) {
+              throw new Error('Gist content not found');
+            }
+
+            return { result: gistContent };
+
+      - name: 设置 Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: 调用 GLM-4-plus 分析
+        id: analyze_gist
+        run: |
+          pip install zhipuai
+          python - <<EOF
+          from zhipuai import ZhipuAI
+
+          client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
+          response = client.chat.completions.create(
+              model="glm-4-plus",
+              messages=[
+                  {
+                      "role": "system",
+                      "content": """
+# 角色
+你是一位专业的视频内容分析专家，能够精准地对直播转录文本进行分析，并给出具体的关键信息、开始时间戳和结束时间戳以及大致内容描述。
+
+## 技能
+### 技能 1: 分析直播转录文本
+1. 仔细阅读给定的直播转录文本，提取出重要事件、观点和情感表达。
+2. 为每个提取出的内容确定具体的开始时间戳和结束时间戳，精确到秒。
+3. 对每个提取出的内容进行简洁的描述，突出关键信息。
+4. 判断临近的片段，如果内容相似并且可以合同到同一个主题，只输出合并以后的信息
+===回复示例===
+   - 关键信息: <具体的关键信息描述>
+   - 时间戳: <开始时间戳到结束时间戳，如 00:05:12 到 00:05:12>
+   - 内容描述: <对该关键信息的大致内容描述>
+   - 关键信息: <具体的关键信息描述>
+   - 时间戳: <开始时间戳到结束时间戳，如 00:12:34 到 00:16:12>
+   - 内容描述: <对该关键信息的大致内容描述>
+   - 关键信息: <具体的关键信息描述>
+   - 时间戳: <开始时间戳到结束时间戳，如 00:25:45 到 00:27:12>
+   - 内容描述: <对该关键信息的大致内容描述>
+   - 关键信息: <具体的关键信息描述>
+   - 时间戳: <开始时间戳到结束时间戳，如 00:38:10 到 00:43:12>
+   - 内容描述: <对该关键信息的大致内容描述>
+   - 关键信息: <具体的关键信息描述>
+   - 时间戳: <开始时间戳到结束时间戳，如 00:50:22 到 00:52:12>
+   - 内容描述: <对该关键信息的大致内容描述>
+===示例结束===
+
+## 限制:
+- 分析和描述必须准确反映转录文本的内容，不能有偏差。
+- 根据数据直接使用你的技能，不要回复其他的。
+"""
+                  },
+                  {
+                      "role": "user",
+                      "content": """${{ steps.get_gist.outputs.result }}"""
+                  }
+              ]
+          )
+
+          analysis_result = response['choices'][0]['message']['content']
+          print(f"::set-output name=analysis_result::{analysis_result}")
+          EOF
+
+      - name: 添加分析结果到 Issue 评论
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const analysisResult = `\n\n**视频分析结果**:\n${{ steps.analyze_gist.outputs.analysis_result }}`;
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: analysisResult
+            });
+
+      - name: 更新 Issue 标签
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = context.issue.number;
+            const { owner, repo } = context.repo;
+
+            // 获取当前 issue 的标签
+            const { data: issue } = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number: issueNumber
+            });
+
+            // 过滤掉 'in-progress' 标签，并添加 'done' 标签
+            const newLabels = issue.labels
+              .map(label => label.name)
+              .filter(name => name !== 'in-progress')
+              .concat('done');
+
+            // 更新 issue 的标签
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              labels: newLabels
+            });
