@@ -80,7 +80,7 @@ jobs:
             转写结果已存储在 [Gist](${gistUrl})。
           `;
 
-          await github.issues.createComment({
+          await github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
