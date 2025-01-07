@@ -1,8 +1,8 @@
 name: Video Analysis
 
-on:
-  issues:
-    types: [opened]
+#on:
+#  issues:
+#    types: [opened]
 
 jobs:
   analyze:
