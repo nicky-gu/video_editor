@@ -24,7 +24,7 @@ jobs:
         uses: actions/github-script@v5
         id: get_gist
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             console.log("Fetching issue comments");
             const { data: comments } = await github.rest.issues.listComments({
