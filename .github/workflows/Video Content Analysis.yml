@@ -93,7 +93,7 @@ jobs:
       - name: 添加分析结果到 Issue 评论
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const analysisResult = process.env.ANALYSIS_RESULT.replace(/\\n/g, '\n');
             console.log(`Analysis result: ${analysisResult}`);
@@ -107,7 +107,7 @@ jobs:
       - name: 更新 Issue 标签
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const issueNumber = context.issue.number;
             const { owner, repo } = context.repo;
