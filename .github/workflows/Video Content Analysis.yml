@@ -67,14 +67,10 @@ jobs:
           python - << 'EOL'
           import os
           from zhipuai import ZhipuAI
-
           # 确保 API 密钥正确设置
           client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
-
           system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和简要描述。每段的时间不要超过8分钟，并且需要配上2个适合bilibili视频的标题要求足够吸引眼球。一定不能遗漏时间戳。"
-
           user_content = """${{ steps.get_gist.outputs.result }}"""
-
           response = client.chat.completions.create(
               model="glm-4-flash",
               messages=[
@@ -82,17 +78,16 @@ jobs:
                   {"role": "user", "content": user_content}
               ]
           )
-
           # 确保 response.choices 是一个列表并且有内容
           if not response.choices:
               raise ValueError("No choices found in the response.")
-
           # 访问 message 的 content 属性
           analysis_result = response.choices[0].message.content
-
+          # 将换行符替换为适合环境变量格式的符号
+          escaped_result = analysis_result.replace('\n', '\\n').replace('"', '\\"')
           # 使用环境文件传递输出
           with open(os.environ['GITHUB_ENV'], 'a') as env_file:
-              env_file.write(f"ANALYSIS_RESULT={analysis_result}\n")
+              env_file.write(f'ANALYSIS_RESULT="{escaped_result}"\n')
           EOL
 
       - name: 添加分析结果到 Issue 评论
@@ -100,7 +95,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const analysisResult = process.env.ANALYSIS_RESULT;
+            const analysisResult = process.env.ANALYSIS_RESULT.replace(/\\n/g, '\n');
             console.log(`Analysis result: ${analysisResult}`);
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
