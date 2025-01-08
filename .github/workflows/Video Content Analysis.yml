@@ -123,22 +123,36 @@ jobs:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const issue_number = context.issue.number;
+      
+            // 获取issue信息
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number
             });
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number
-            });
-            const commentList = comments.map(comment => `- ${comment.user.login}: ${comment.body}`).join('\n');
-            return {
-              issueTitle: issue.title || "未提供标题",
-              issueBody: issue.body || "未提供内容",
-              commentList
-            };
+            console.log('Issue Data:', issue);
+
+      // 获取评论信息
+      const { data: comments } = await github.rest.issues.listComments({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number
+      });
+      console.log('Comments Data:', comments);
+
+      // 生成评论列表
+      const commentList = comments.map(comment => `- ${comment.user.login}: ${comment.body}`).join('\n');
+
+      // 打印输出以供调试
+      console.log('Issue Title:', issue.title || "未提供标题");
+      console.log('Issue Body:', issue.body || "未提供内容");
+      console.log('Comment List:', commentList);
+
+      return {
+        issueTitle: issue.title || "未提供标题",
+        issueBody: issue.body || "未提供内容",
+        commentList
+      };
 
       - name: 调试输出 Issue 信息
         run: |
