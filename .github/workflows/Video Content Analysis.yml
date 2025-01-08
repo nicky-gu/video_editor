@@ -122,8 +122,6 @@ jobs:
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            console.log(context.payload); // 输出上下文payload
-            console.log(context.issue);    // 输出context.issue
             const issue_number = context.issue.number;
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
@@ -150,6 +148,7 @@ jobs:
 
       - name: 通知任务成功
         run: |
+          echo "视频AI粗剪任务成功"
           curl -X POST -H "Content-Type: application/json" -d @- ${{ secrets.FEISHU_WEBHOOK }} <<EOF
           {
             "msg_type": "text",
