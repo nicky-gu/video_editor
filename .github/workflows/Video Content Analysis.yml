@@ -122,6 +122,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            console.log(context.payload); // 输出上下文payload
+            console.log(context.issue);    // 输出context.issue
             const issue_number = context.issue.number;
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
