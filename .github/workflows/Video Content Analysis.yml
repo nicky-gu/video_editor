@@ -146,9 +146,11 @@ jobs:
               issue_number
             });
             const commentList = comments.map(comment => `- ${comment.user.login}: ${comment.body}`).join('\n');
+            const issueTitle = issue.title || "未提供标题";
+            const issueBody = issue.body || "未提供内容";
             return {
-              issueTitle: issue.title,
-              issueBody: issue.body,
+              issueTitle,
+              issueBody,
               commentList
             };
 
