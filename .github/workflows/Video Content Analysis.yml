@@ -72,7 +72,7 @@ jobs:
           import os
           from zhipuai import ZhipuAI
           client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
-          system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和简要描述。每段的时间不要超过8分钟，并且需要配上2个适合bilibili视频的标题要求足够吸引眼球。一定不能遗漏时间戳和标题！！。"
+          system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和详细描述。每段的时间不要超过8分钟。并且需要配上2个适合bilibili视频的标题要求足够吸引眼球。一定不能遗漏时间戳和！！标题！！，不然我会被罚站！。"
           user_content = """${{ steps.get_gist.outputs.result }}"""
           response = client.chat.completions.create(
               model="glm-4-flash",
