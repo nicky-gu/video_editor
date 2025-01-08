@@ -18,19 +18,12 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v2
 
-      - name: 输出调试信息 - 事件上下文
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Event action: ${{ github.event.action }}"
-          echo "Issue number: ${{ github.event.issue.number }}"
-
       - name: 获取 Gist 内容
         uses: actions/github-script@v5
         id: get_gist
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            console.log("Fetching issue comments");
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -39,11 +32,9 @@ jobs:
             const gistUrlPattern = /gist\.github\.com\/[\w-]+\/([\da-f]+)/;
             let gistContent = '';
             for (const comment of comments) {
-              console.log(`Processing comment: ${comment.body}`);
               const match = comment.body.match(gistUrlPattern);
               if (match) {
                 const gistId = match[1];
-                console.log(`Found Gist ID: ${gistId}`);
                 const { data: gist } = await github.rest.gists.get({
                   gist_id: gistId
                 });
@@ -84,9 +75,9 @@ jobs:
           if not response.choices:
               raise ValueError("No choices found in the response.")
           analysis_result = response.choices[0].message.content
-          escaped_result = analysis_result.replace('\n', '\\n').replace('"', '\\"')
           with open(os.environ['GITHUB_ENV'], 'a') as env_file:
-              env_file.write(f'ANALYSIS_RESULT="{escaped_result}"\n')
+              analysis_result = analysis_result.replace('\n', '\\n').replace('"', '\\"')
+              env_file.write(f'ANALYSIS_RESULT="{analysis_result}"\n')
           EOL
 
       - name: 添加分析结果到 Issue 评论
@@ -95,7 +86,6 @@ jobs:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const analysisResult = process.env.ANALYSIS_RESULT.replace(/\\n/g, '\n');
-            console.log(`Analysis result: ${analysisResult}`);
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -115,12 +105,10 @@ jobs:
               repo,
               issue_number: issueNumber
             });
-            console.log(`Current labels: ${issue.labels.map(label => label.name).join(', ')}`);
             const newLabels = issue.labels
               .map(label => label.name)
               .filter(name => name !== 'in-progress')
               .concat('done');
-            console.log(`New labels: ${newLabels.join(', ')}`);
             await github.rest.issues.update({
               owner,
               repo,
@@ -146,11 +134,9 @@ jobs:
               issue_number
             });
             const commentList = comments.map(comment => `- ${comment.user.login}: ${comment.body}`).join('\n');
-            const issueTitle = issue.title || "未提供标题";
-            const issueBody = issue.body || "未提供内容";
             return {
-              issueTitle,
-              issueBody,
+              issueTitle: issue.title || "未提供标题",
+              issueBody: issue.body || "未提供内容",
               commentList
             };
 
