@@ -123,7 +123,7 @@ jobs:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const issue_number = context.issue.number;
-
+      
             // 获取issue信息
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
@@ -131,34 +131,20 @@ jobs:
               issue_number
             });
             console.log('Issue Data:', issue);
-
-            // 获取评论信息
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number
-            });
-            console.log('Comments Data:', comments);
-
-            // 生成评论列表
-            const commentList = comments.map(comment => `- ${comment.user.login}: ${comment.body}`).join('\n');
-
-            // 打印输出以供调试
-            console.log('Issue Title:', issue.title || "未提供标题");
-            console.log('Issue Body:', issue.body || "未提供内容");
-            console.log('Comment List:', commentList);
-
-            return {
-              issueTitle: issue.title || "未提供标题",
-              issueBody: issue.body || "未提供内容",
-              commentList
-            };
+      
+            // 打印并设置需要的输出
+            const issueUrl = issue.url;
+            const issueBody = issue.body || "未提供内容";
+            console.log('Issue URL:', issueUrl);
+            console.log('Issue Body:', issueBody);
+      
+            core.setOutput('issueUrl', issueUrl);
+            core.setOutput('issueBody', issueBody);
 
       - name: 调试输出 Issue 信息
         run: |
-          echo "Issue Title: ${{ steps.updated_issue_details.outputs.issueTitle }}"
+          echo "Issue URL: ${{ steps.updated_issue_details.outputs.issueUrl }}"
           echo "Issue Body: ${{ steps.updated_issue_details.outputs.issueBody }}"
-          echo "Comment List: ${{ steps.updated_issue_details.outputs.commentList }}"
 
       - name: 通知任务成功
         run: |
