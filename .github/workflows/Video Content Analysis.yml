@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.issue.labels.*.name, 'in-progress') && contains(github.event.issue.labels.*.name, 'video-analysis')
 
+    permissions:
+      issues: write
+      pull-requests: write
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v2
@@ -67,7 +71,6 @@ jobs:
           python - << 'EOL'
           import os
           from zhipuai import ZhipuAI
-          # 确保 API 密钥正确设置
           client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
           system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和简要描述。每段的时间不要超过8分钟，并且需要配上2个适合bilibili视频的标题要求足够吸引眼球。一定不能遗漏时间戳和标题！！。"
           user_content = """${{ steps.get_gist.outputs.result }}"""
@@ -78,14 +81,10 @@ jobs:
                   {"role": "user", "content": user_content}
               ]
           )
-          # 确保 response.choices 是一个列表并且有内容
           if not response.choices:
               raise ValueError("No choices found in the response.")
-          # 访问 message 的 content 属性
           analysis_result = response.choices[0].message.content
-          # 将换行符替换为适合环境变量格式的符号
           escaped_result = analysis_result.replace('\n', '\\n').replace('"', '\\"')
-          # 使用环境文件传递输出
           with open(os.environ['GITHUB_ENV'], 'a') as env_file:
               env_file.write(f'ANALYSIS_RESULT="{escaped_result}"\n')
           EOL
@@ -141,20 +140,23 @@ jobs:
               repo: context.repo.repo,
               issue_number
             });
-
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number
             });
-
             const commentList = comments.map(comment => `- ${comment.user.login}: ${comment.body}`).join('\n');
-
             return {
               issueTitle: issue.title,
               issueBody: issue.body,
               commentList
             };
+
+      - name: 调试输出 Issue 信息
+        run: |
+          echo "Issue Title: ${{ steps.updated_issue_details.outputs.issueTitle }}"
+          echo "Issue Body: ${{ steps.updated_issue_details.outputs.issueBody }}"
+          echo "Comment List: ${{ steps.updated_issue_details.outputs.commentList }}"
 
       - name: 通知任务成功
         run: |
