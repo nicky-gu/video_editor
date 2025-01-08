@@ -120,7 +120,7 @@ jobs:
         id: updated_issue_details
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             console.log(context.payload); // 输出上下文payload
             console.log(context.issue);    // 输出context.issue
