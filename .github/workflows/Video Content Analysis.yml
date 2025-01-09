@@ -153,7 +153,7 @@ jobs:
           {
             "msg_type": "text",
             "content": {
-              "text": "视频AI粗剪任务成功\nIssue: ${{ steps.updated_issue_details.outputs.issueTitle }}\n${{ steps.updated_issue_details.outputs.issueBody }}\nComments:\n${{ steps.updated_issue_details.outputs.commentList }}"
+              "text": "视频AI粗剪任务成功\nIssue URL: ${{ steps.updated_issue_details.outputs.issueUrl }}\n${{ steps.updated_issue_details.outputs.issueBody }}\nComments:\n${{ steps.updated_issue_details.outputs.commentList }}"
             }
           }
           EOF
