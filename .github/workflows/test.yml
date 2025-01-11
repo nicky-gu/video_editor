@@ -1,4 +1,4 @@
-name: 视频AI粗剪
+name: test
 
 on:
   issues:
