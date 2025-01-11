@@ -97,7 +97,11 @@ jobs:
           # 将分段结果保存到环境变量
           with open(os.environ['GITHUB_ENV'], 'a') as env_file:
               for i, segment in enumerate(segments):
-                  env_file.write(f'SEGMENT_{i + 1}="{segment}"\n')
+                  # 替换时间戳中的特殊字符
+                  segment = segment.replace(',', '.').replace('-->', 'to')
+                  # 对分段内容进行转义
+                  segment_escaped = segment.replace('\n', '\\n').replace('"', '\\"')
+                  env_file.write(f'SEGMENT_{i + 1}="{segment_escaped}"\n')
               env_file.write(f'SEGMENT_COUNT={len(segments)}\n')
           EOL
 
