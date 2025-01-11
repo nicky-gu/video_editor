@@ -13,7 +13,6 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
-      gists: write
 
     steps:
       - name: 检出代码
