@@ -1,4 +1,4 @@
-name: 托尔斯泰
+name: 视频AI粗剪
 
 on:
   issues:
@@ -13,6 +13,7 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
+      gists: write
 
     steps:
       - name: 检出代码
@@ -96,7 +97,7 @@ jobs:
               public: false,
               description: '视频分析结果'
             });
-            return { gistUrl: gist.html_url };
+            core.setOutput('gistUrl', gist.html_url);
 
       - name: 添加 Gist 链接到 Issue 评论
         uses: actions/github-script@v5
@@ -108,7 +109,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `**视频分析结果已上传到 Gist**:\n${gistUrl}`
+              body: `**视频分析结果已上传到 Gist**:\n[查看分析结果](${gistUrl})`
             });
 
       - name: 更新 Issue 标签
@@ -147,7 +148,7 @@ jobs:
               issue_number
             });
             console.log('Issue Data:', issue);
-            const issueUrl = issue.url;
+            const issueUrl = issue.html_url;
             const issueBody = issue.body || "未提供内容";
             console.log('Issue URL:', issueUrl);
             console.log('Issue Body:', issueBody);
