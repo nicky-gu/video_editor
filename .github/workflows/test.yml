@@ -1,4 +1,4 @@
-name: test
+name: 托尔斯泰
 
 on:
   issues:
@@ -13,6 +13,7 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
+      gists: write
 
     steps:
       - name: 检出代码
@@ -56,104 +57,59 @@ jobs:
         run: |
           pip install --upgrade zhipuai
 
-      - name: 预处理文本并分段
-        id: preprocess_and_split
-        run: |
-          python - << 'EOL'
-          import os
-          import re
-
-          def preprocess_text(text):
-              # 去掉多余的换行符，保留时间戳
-              text = re.sub(r'\n+', '\n', text).strip()
-              return text
-
-          def split_text(text, max_tokens=4000):
-              lines = text.split('\n')  # 按行分割
-              segments = []
-              current_segment = []
-              current_length = 0
-
-              for line in lines:
-                  # 假设每行的 token 数为 1（实际情况可能更复杂）
-                  if current_length + 1 <= max_tokens:
-                      current_segment.append(line)
-                      current_length += 1
-                  else:
-                      segments.append("\n".join(current_segment))
-                      current_segment = [line]
-                      current_length = 1
-
-              if current_segment:
-                  segments.append("\n".join(current_segment))
-
-              return segments
-
-          # 从环境变量获取 Gist 内容
-          gist_content = """${{ steps.get_gist.outputs.result }}"""
-          cleaned_text = preprocess_text(gist_content)
-          segments = split_text(cleaned_text)
-
-          # 将分段结果保存到环境变量
-          with open(os.environ['GITHUB_ENV'], 'a') as env_file:
-              for i, segment in enumerate(segments):
-                  # 替换时间戳中的特殊字符
-                  segment = segment.replace(',', '.').replace('-->', 'to')
-                  # 对分段内容进行转义
-                  segment_escaped = segment.replace('\n', '\\n').replace('"', '\\"')
-                  env_file.write(f'SEGMENT_{i + 1}="{segment_escaped}"\n')
-              env_file.write(f'SEGMENT_COUNT={len(segments)}\n')
-          EOL
-
       - name: 调用 GLM-4-flash 分析
         id: analyze_gist
         run: |
           python - << 'EOL'
           import os
           from zhipuai import ZhipuAI
-
-          def analyze_segment(segment):
-              client = ZhipuAI(api_key=os.getenv("ZHIPU_AI_API_KEY"))
-              system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和详细描述。每段的时间不要超过8分钟，并且需要配上2个适合bilibili视频的标题要求足够吸引眼球。一定不能遗漏时间戳和标题！！。"
-              response = client.chat.completions.create(
-                  model="glm-4-flash",
-                  messages=[
-                      {"role": "system", "content": system_prompt},
-                      {"role": "user", "content": segment}
-                  ]
-              )
-              if not response.choices:
-                  raise ValueError("No choices found in the response.")
-              return response.choices[0].message.content
-
-          # 获取分段数量
-          segment_count = int(os.getenv("SEGMENT_COUNT"))
-          analysis_results = []
-
-          # 分析每个分段
-          for i in range(1, segment_count + 1):
-              segment = os.getenv(f"SEGMENT_{i}")
-              result = analyze_segment(segment)
-              analysis_results.append(result)
-
-          # 将分析结果保存到环境变量
-          with open(os.environ['GITHUB_ENV'], 'a') as env_file:
-              analysis_result = "\\n".join(analysis_results)
-              analysis_result = analysis_result.replace('\n', '\\n').replace('"', '\\"')
-              env_file.write(f'ANALYSIS_RESULT="{analysis_result}"\n')
+          client = ZhipuAI(api_key="${{ secrets.ZHIPU_AI_API_KEY }}")
+          system_prompt = "你是一位视频分析专家。分析以下转录文本，提取出重要事件、时间戳和详细描述。每段的时间不要超过8分钟，并且需要配上2个适合bilibili视频的标题要求足够吸引眼球。一定不能遗漏时间戳和标题！！。如果内容是主播互动，请详细总结互动的具体内容"
+          user_content = """${{ steps.get_gist.outputs.result }}"""
+          response = client.chat.completions.create(
+              model="glm-4-flash",
+              messages=[
+                  {"role": "system", "content": system_prompt},
+                  {"role": "user", "content": user_content}
+              ]
+          )
+          if not response.choices:
+              raise ValueError("No choices found in the response.")
+          analysis_result = response.choices[0].message.content
+          with open("analysis_result.txt", "w") as file:
+              file.write(analysis_result)
           EOL
 
-      - name: 添加分析结果到 Issue 评论
+      - name: 创建 Gist 以保存分析结果
+        uses: actions/github-script@v5
+        id: create_gist
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const content = fs.readFileSync('analysis_result.txt', 'utf8');
+            const { data: gist } = await github.rest.gists.create({
+              files: {
+                'analysis_result.txt': {
+                  content: content
+                }
+              },
+              public: false,
+              description: '视频分析结果'
+            });
+            return { gistUrl: gist.html_url };
+
+      - name: 添加 Gist 链接到 Issue 评论
         uses: actions/github-script@v5
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            const analysisResult = process.env.ANALYSIS_RESULT.replace(/\\n/g, '\n');
+            const gistUrl = '${{ steps.create_gist.outputs.gistUrl }}';
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `**视频分析结果**:\n${analysisResult}`
+              body: `**视频分析结果已上传到 Gist**:\n${gistUrl}`
             });
 
       - name: 更新 Issue 标签
@@ -186,21 +142,16 @@ jobs:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const issue_number = context.issue.number;
-
-            // 获取issue信息
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number
             });
             console.log('Issue Data:', issue);
-
-            // 打印并设置需要的输出
             const issueUrl = issue.url;
             const issueBody = issue.body || "未提供内容";
             console.log('Issue URL:', issueUrl);
             console.log('Issue Body:', issueBody);
-
             core.setOutput('issueUrl', issueUrl);
             core.setOutput('issueBody', issueBody);
 
@@ -216,7 +167,7 @@ jobs:
           {
             "msg_type": "text",
             "content": {
-              "text": "视频AI粗剪任务成功\nIssue URL: ${{ steps.updated_issue_details.outputs.issueUrl }}\n${{ steps.updated_issue_details.outputs.issueBody }}\nComments:\n${{ steps.updated_issue_details.outputs.commentList }}"
+              "text": "视频AI粗剪任务成功\nIssue URL: ${{ steps.updated_issue_details.outputs.issueUrl }}\n${{ steps.updated_issue_details.outputs.issueBody }}"
             }
           }
           EOF
